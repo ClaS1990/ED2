@@ -399,6 +399,8 @@ subroutine reproduction(cgrid,month)
                      call init_ed_cohort_vars(cpatch,ico,cpoly%lsl(isi))
                      !---------------------------------------------------------------------!
 
+                     cpatch%cohort_id(ico) = ico
+
                      !----- Copy from recruitment table (II). -----------------------------!
                      cpatch%nplant          (ico) = recruit(inew)%nplant
                      cpatch%bdead           (ico) = recruit(inew)%bdead

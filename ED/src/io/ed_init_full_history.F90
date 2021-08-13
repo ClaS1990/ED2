@@ -4634,6 +4634,8 @@ subroutine fill_history_patch(cpatch,paco_index,ncohorts_global)
                      ,'VM_BAR                    ',dsetrank,iparallel,.true. ,foundvar)
    call hdf_getslab_r(cpatch%sla                                                           &
                      ,'SLA                       ',dsetrank,iparallel,.true. ,foundvar)
+   call hdf_getslab_i(cpatch%cohort_id                                                        &
+                     ,'COHORT_ID                 ',dsetrank,iparallel,.true. ,foundvar)
    call hdf_getslab_r(cpatch%vm0                                                           &
                      ,'VM0                       ',dsetrank,iparallel,.true. ,foundvar)
    call hdf_getslab_r(cpatch%leaf_psi                                                      &

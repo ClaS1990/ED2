@@ -884,6 +884,8 @@ subroutine read_ed10_ed20_history_file
                         cpatch%gpp(ic2)   = 0.0
                         cpatch%par_l(ic2) = 0.0
 
+                        read(cname(ic), '(i)')cpatch%cohort_id(ic2)
+
                         !----- Update the patch level above-ground biomass. ---------------!
                         csite%plant_ag_biomass(ipa) = csite%plant_ag_biomass(ipa)          &
                                                     + cpatch%agb(ic2) * cpatch%nplant(ic2)

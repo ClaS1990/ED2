@@ -976,6 +976,9 @@ module ed_state_vars
       real,pointer,dimension(:,:)   :: qmsqu_sensible_wc
       real,pointer,dimension(:,:)   :: qmsqu_vapor_wc
       !------------------------------------------------------------------------------------!
+
+      integer, pointer, dimension(:) :: cohort_id
+
    end type patchtype
    !=======================================================================================!
    !=======================================================================================!
@@ -4988,6 +4991,8 @@ module ed_state_vars
       allocate(cpatch%dmax_wood_psi                (                    ncohorts))
       allocate(cpatch%dmin_wood_psi                (                    ncohorts))
 
+      allocate(cpatch%cohort_id(ncohorts))
+
       if (writing_long) then
          allocate(cpatch%dmean_nppleaf             (                    ncohorts))
          allocate(cpatch%dmean_nppfroot            (                    ncohorts))
@@ -6788,6 +6793,9 @@ module ed_state_vars
       nullify(cpatch%low_leaf_psi_days     )
       nullify(cpatch%last_gV               )
       nullify(cpatch%last_gJ               )
+
+      nullify(cpatch%cohort_id)
+
       nullify(cpatch%fmean_gpp             )
       nullify(cpatch%fmean_npp             )
       nullify(cpatch%fmean_leaf_resp       )
@@ -7797,6 +7805,8 @@ module ed_state_vars
       if(associated(cpatch%low_leaf_psi_days   )) deallocate(cpatch%low_leaf_psi_days   )
       if(associated(cpatch%last_gV             )) deallocate(cpatch%last_gV             )
       if(associated(cpatch%last_gJ             )) deallocate(cpatch%last_gJ             )
+
+      if(associated(cpatch%cohort_id))deallocate(cpatch%cohort_id)
 
       if(associated(cpatch%fmean_gpp           )) deallocate(cpatch%fmean_gpp           )
       if(associated(cpatch%fmean_npp           )) deallocate(cpatch%fmean_npp           )
@@ -9731,6 +9741,8 @@ module ed_state_vars
          opatch%last_gV               (oco) = ipatch%last_gV               (ico)
          opatch%last_gJ               (oco) = ipatch%last_gJ               (ico)
 
+         opatch%cohort_id(oco) = ipatch%cohort_id(ico)
+
          opatch%fmean_gpp             (oco) = ipatch%fmean_gpp             (ico)
          opatch%fmean_npp             (oco) = ipatch%fmean_npp             (ico)
          opatch%fmean_leaf_resp       (oco) = ipatch%fmean_leaf_resp       (ico)
@@ -10420,6 +10432,8 @@ module ed_state_vars
       opatch%low_leaf_psi_days     (1:z) = pack(ipatch%low_leaf_psi_days         ,lmask)
       opatch%last_gV               (1:z) = pack(ipatch%last_gV                   ,lmask)
       opatch%last_gJ               (1:z) = pack(ipatch%last_gJ                   ,lmask)
+
+      opatch%cohort_id(1:z) = pack(ipatch%cohort_id,lmask)
 
       !------------------------------------------------------------------------------------!
 
@@ -24312,6 +24326,13 @@ module ed_state_vars
          nvar=nvar+1
            call vtable_edio_i(npts,cpatch%first_census,nvar,igr,init,cpatch%coglob_id, &
            var_len,var_len_global,max_ptrs,'FIRST_CENSUS :40:hist') 
+         call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
+      end if
+
+      if (associated(cpatch%cohort_id)) then
+         nvar=nvar+1
+           call vtable_edio_i(npts,cpatch%cohort_id,nvar,igr,init,cpatch%coglob_id, &
+           var_len,var_len_global,max_ptrs,'COHORT_ID :40:hist:year:anal:dail:mont:dcyc') 
          call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
       end if
 

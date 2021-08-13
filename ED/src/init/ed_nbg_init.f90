@@ -226,6 +226,8 @@ subroutine init_nbg_cohorts(csite,lsl,ipa_a,ipa_z)
          cpatch%sla(ico)              = sla(ipft)
          cpatch%root2leaf(ico) = 0.5 * (root2leaf_min(ipft) + root2leaf_max(ipft))
 
+         cpatch%cohort_id(ico) = ico
+
          salloc                       = 1.0 + cpatch%root2leaf(ico) + qsw(ipft) * cpatch%hite(ico)
          salloci                      = 1. / salloc
 
@@ -369,6 +371,7 @@ subroutine init_cohorts_by_layers(csite,lsl,ipa_a,ipa_z)
          cpatch%sla(ico)              = sla(ipft)
          cpatch%root2leaf(ico) = 0.5 * (root2leaf_min(ipft) + root2leaf_max(ipft))
 
+         cpatch%cohort_id(ico) = ico
 
          salloc                       = 1.0 + cpatch%root2leaf(ico) + qsw(ipft) * cpatch%hite(ico)
          salloci                      = 1. / salloc
@@ -555,6 +558,8 @@ subroutine near_bare_ground_big_leaf_init(cgrid)
                cpatch%bdead(ico)            = dbh2bd(cpatch%dbh(ico),ipft)
                cpatch%bleaf(ico)            = size2bl(cpatch%dbh(ico),cpatch%hite(ico),ipft)
                cpatch%sla(ico)              = sla(ipft)
+
+               cpatch%cohort_id(ico) = ico
 
                salloc                       = 1.0 + cpatch%root2leaf(ico) + qsw(ipft) * cpatch%hite(ico)
                salloci                      = 1. / salloc
