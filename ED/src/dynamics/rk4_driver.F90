@@ -31,7 +31,7 @@ module rk4_driver
       use grid_coms              , only : nzg                  & ! intent(in)
                                         , nzs                  ! ! intent(in)
       use ed_misc_coms           , only : current_time         & ! intent(in)
-                                        , dtlsm                ! ! intent(in)
+                                        , dtlsm,frqsum                ! ! intent(in)
       use therm_lib              , only : tq2enthalpy          ! ! function
       use budget_utils           , only : update_budget        & ! function
                                         , compute_budget       ! ! function
@@ -39,7 +39,8 @@ module rk4_driver
       use mend_rk4, only: mend_rk4_inc, mend_zero_fluxes
       use mend_plant, only: mend_som_plant_feedback
       use mend_consts_coms, only: som_consts
-      use mend_state_vars, only: mend_mm_time
+      use mend_state_vars, only: mend_mm_time, mend_dm_time
+      use consts_coms, only: umols_2_kgCyr
 
       !$ use omp_lib
       implicit none
@@ -108,7 +109,6 @@ module rk4_driver
             cpoly%avg_monthly_pcpg(imon,isi) = cpoly%avg_monthly_pcpg(imon,isi)            &
                                              + cmet%pcpg * dtlsm
             !------------------------------------------------------------------------------!
-
 
 
             !------------------------------------------------------------------------------!
@@ -239,7 +239,9 @@ module rk4_driver
                     csite%soil_water(:,ipa),cpoly%ntext_soil(:,isi), csite%mend%pH(ipa))
                call mend_extern_forcing(csite%mend, ipa, &
                     cpatch, csite%mend%bulk_den(ipa), &
-                    cgrid%met(ipy)%ndep, cgrid%met(ipy)%pdep)
+                    cgrid%met(ipy)%ndep, cgrid%met(ipy)%pdep, &
+                    cgrid%met(ipy)%nh4dep,cgrid%met(ipy)%no3dep)
+
 !               call mend_extern_forcing(csite%mend, ipa, &
 !                    cpatch%ncohorts, cpatch%broot, cpatch%nplant, &
 !                    cpatch%pft, cpatch%krdepth, csite%mend%bulk_den(ipa), &
@@ -299,6 +301,8 @@ module rk4_driver
                ! umolC/m2Soil/s
                co2_lost_units = co2_lost_units / dtlsm
                csite%rh(ipa) = csite%rh(ipa) + co2_lost_units * dtlsm / 86400.
+               csite%fmean_rh(ipa) = csite%fmean_rh(ipa)                           &
+                           + csite%rh(ipa) * umols_2_kgCyr * dtlsm/frqsum
                
                if(cpatch%ncohorts > 0)then
                   call mend_som_plant_feedback( &
@@ -320,6 +324,7 @@ module rk4_driver
                        csite%patch(ipa)%water_supply_nl, &
                        csite%patch(ipa)%lai,csite%patch(ipa)%enz_alloc_frac_p)
                endif
+
 
                !----- Add the number of steps into the step counter. ----------------------!
                !----- workload accumulation is order-independent, so this can stay shared
@@ -347,6 +352,7 @@ module rk4_driver
                                   ,old_can_shv,old_can_co2,old_can_rhos,old_can_prss)
 
                call mend_rk4_inc(csite%mend_mm, csite%mend, dtlsm, ipa, ipa)
+               call mend_rk4_inc(csite%mend_dm, csite%mend, dtlsm, ipa, ipa)
 
                !---------------------------------------------------------------------------!
             end do patchloop
@@ -361,6 +367,7 @@ module rk4_driver
       !------------------------------------------------------------------------------------!
 
       mend_mm_time = mend_mm_time + dtlsm
+      mend_dm_time = mend_dm_time + dtlsm
 
       return
    end subroutine rk4_timestep

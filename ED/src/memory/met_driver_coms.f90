@@ -47,7 +47,7 @@ module met_driver_coms
    !---------------------------------------------------------------------------------------!
    integer, parameter :: metname_len = 128    !
    integer, parameter :: metvars_len =  16    !
-   logical            :: has_co2              ! Do the H5 data have CO2, or did the user
+   logical            :: has_co2, has_no3dep, has_nh4dep              ! Do the H5 data have CO2, or did the user
                                               !    specify it with initial_co2?
    logical            :: has_ustar            ! Do the H5 data have u*, or the model is
                                               !    supposed to calculate it?
@@ -118,6 +118,8 @@ module met_driver_coms
       real, pointer, dimension(:) :: sh
       real, pointer, dimension(:) :: tmp
       real, pointer, dimension(:) :: co2
+      real, pointer, dimension(:) :: nh4dep
+      real, pointer, dimension(:) :: no3dep
       real, dimension(:), allocatable :: ndep,pdep
    end type met_driv_data
    !---------------------------------------------------------------------------------------!
@@ -155,6 +157,7 @@ module met_driver_coms
       real :: pptnorm
       real :: ndep
       real :: pdep
+      real :: nh4dep, no3dep
    end type met_driv_state
    !---------------------------------------------------------------------------------------!
 

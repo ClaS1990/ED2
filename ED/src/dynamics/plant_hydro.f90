@@ -105,14 +105,13 @@ module plant_hydro
           nsoil = ntext_soil(k)
           
           !get relative soil moisture
+!          wgpfrac = min(1.0,                                &
+!                    csite%soil_water(k,ipa) * csite%soil_fracliq(k,ipa) /           &
+!                    soil(nsoil)%slmsts)
 
-          wgpfrac = min(1.0,                                &
-                    csite%soil_water(k,ipa) * csite%soil_fracliq(k,ipa) /           &
-                    soil(nsoil)%slmsts)
-
-!          wgpfrac = max(soil(nsoil)%soilcp,min(1.0,                                &
-!                    csite%soil_water(k,ipa) * csite%soil_fracliq(k,ipa))) /           &
-!                    soil(nsoil)%slmsts))
+          wgpfrac = max(soil(nsoil)%soilcp,min(1.0,                                &
+               csite%soil_water(k,ipa) * csite%soil_fracliq(k,ipa) /           &
+               soil(nsoil)%slmsts))
 
           ! Clapp & Horn curves
           soil_psi(k)  = soil(nsoil)%slpots / wgpfrac ** soil(nsoil)%slbs ! m
@@ -165,6 +164,7 @@ module plant_hydro
 !if(ico == 78)print*,'1b',ico,cpatch%leaf_psi(ico),cpatch%leaf_rwc(ico),transp
 
                 c_leaf = leaf_water_cap(cpatch%pft(ico)) * C2B * cpatch%bleaf(ico)
+!if(ico == 1)print*,'before',cpatch%leaf_psi(ico)
                 if (c_leaf > 0.) then
             
                     cpatch%leaf_psi(ico) = cpatch%leaf_psi(ico)                  &
@@ -178,7 +178,7 @@ module plant_hydro
 !                                 cpatch%leaf_rwc(ico),cpatch%wood_rwc(ico))
                 endif
 !if(ico == 78)print*,'1c',ico,cpatch%leaf_psi(ico),cpatch%leaf_rwc(ico),transp
-                
+!if(ico == 1)print*,'after',cpatch%leaf_psi(ico)
                 !--------------------------------------------------------------------------
                 ! Handling Potential Errors and Help Debugging
                 !--------------------------------------------------------------------------
@@ -513,8 +513,7 @@ module plant_hydro
       small_tree_flag = ((c_leaf > (c_stem / 2.d0)) .or. (hite_d == hgt_min(ipft)))
 
 
-
-
+small_tree_flag = .true.
 
       if (small_tree_flag) then
           ! 1.1 small tree, force leaf_psi to be the same as wood_psi

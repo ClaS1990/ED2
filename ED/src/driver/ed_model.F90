@@ -313,8 +313,8 @@ subroutine ed_model()
       if (.not. past_one_month .and. new_month) past_one_month=.true.
 
       new_year        = current_time%month == 1 .and. new_month
-      mont_analy_time = new_month .and. writing_mont
-      dail_analy_time = new_day   .and. writing_dail
+      mont_analy_time = new_month .and. writing_mont .and. current_time%year >= 2000
+      dail_analy_time = new_day   .and. writing_dail .and. current_time%year >= 2014
       dcyc_analy_time = new_month .and. writing_dcyc
       reset_time      = mod(time,dble(frqsum)) < dble(dtlsm)
       annual_time     = new_month .and. writing_year .and.                                 &

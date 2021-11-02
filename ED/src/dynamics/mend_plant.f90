@@ -118,8 +118,12 @@ Contains
        broot_nl = broot(ico) * (1. - root_beta(pft(ico))**  &
             (-slz(nlsl)/(-slz(krdepth(ico)))))
 
-       n_limit_factor = 1.0 - (nstorage(ico) / &
-            nstorage_max(ico))**consts%wexp
+       if(nstorage(ico) < 0.001 * nstorage_max(ico))then
+          n_limit_factor = 1.
+       else
+          n_limit_factor = 1.0 - (nstorage(ico) / &
+               nstorage_max(ico))**consts%wexp
+       endif
        n_limit_factor = max(min(1., n_limit_factor), 0.)
        p_limit_factor = 1.0 - (pstorage(ico) / &
             pstorage_max(ico))**consts%wexp
@@ -218,8 +222,13 @@ Contains
        broot_nl = broot(ico) * (1. - root_beta(pft(ico))**  &
             (-slz(nlsl)/(-slz(krdepth(ico)))))
        
-       n_limit_factor(ico) = 1.0 - (nstorage(ico) / &
-            nstorage_max(ico))**consts%wexp
+
+       if(nstorage(ico) < 0.001 * nstorage_max(ico))then
+          n_limit_factor(ico) = 1.
+       else
+          n_limit_factor(ico) = 1.0 - (nstorage(ico) / &
+               nstorage_max(ico))**consts%wexp
+       endif
        n_limit_factor(ico) = max(min(1., n_limit_factor(ico)), 0.)
        p_limit_factor(ico) = 1.0 - (pstorage(ico) / &
             pstorage_max(ico))**consts%wexp

@@ -1675,6 +1675,7 @@ module disturbance_utils
 
       call mend_zero_vars(csite%mend, np, np)
       call mend_zero_vars(csite%mend_mm, np, np)
+      call mend_zero_vars(csite%mend_dm, np, np)
 
       !----- Initialise all fast and long-term variables. ---------------------------------!
       call init_ed_patch_vars(csite,np,np,lsl)
@@ -2704,10 +2705,13 @@ module disturbance_utils
 
       call mend_rk4_inc(csite%mend, csite%mend, area_fac, np, cp)
       call mend_rk4_inc(csite%mend_mm, csite%mend_mm, area_fac, np, cp)
+      call mend_rk4_inc(csite%mend_dm, csite%mend_dm, area_fac, np, cp)
       csite%mend%bulk_den(np) = csite%mend%bulk_den(cp)
       csite%mend%pH(np) = csite%mend%pH(cp)
       csite%mend_mm%bulk_den(np) = csite%mend%bulk_den(cp)
       csite%mend_mm%pH(np) = csite%mend%pH(cp)
+      csite%mend_dm%bulk_den(np) = csite%mend%bulk_den(cp)
+      csite%mend_dm%pH(np) = csite%mend%pH(cp)
 
       return
    end subroutine increment_patch_vars

@@ -128,7 +128,7 @@ subroutine init_met_drivers
                               , met_interp        & ! intent(out)
                               , no_ll             & ! intent(out)
                               , has_co2           & ! intent(out)
-                              , has_ustar         ! ! intent(out)
+                              , has_ustar, has_no3dep, has_nh4dep         ! ! intent(out)
    use canopy_air_coms , only : isfclyrm          ! ! intent(in)
    use ed_state_vars   , only : edgrid_g          & ! structure
                               , edtype            & ! structure
@@ -155,6 +155,8 @@ subroutine init_met_drivers
    !----- Read the information for each format. -------------------------------------------!
    has_co2   = .false.
    has_ustar = .false.
+   has_nh4dep = .false.
+   has_no3dep = .false.
    formloop: do iformat = 1,nformats
       !----- Finding the met driver boundaries. -------------------------------------------!
       westedge  = met_xmin(iformat) - 0.5 * met_dx(iformat)
@@ -285,6 +287,16 @@ subroutine init_met_drivers
                   cgrid%metinput(ipy)%atm_ustar = huge(1.)
 
                case ('lat','lon') !---- Latitude and longitude: skip them. ----------------!
+               case('nh4dep')
+                  has_nh4dep = .true.
+                  nullify(cgrid%metinput(ipy)%nh4dep)
+                  allocate(cgrid%metinput(ipy)%nh4dep(mem_size))
+                  cgrid%metinput(ipy)%nh4dep = huge(1.)
+               case('no3dep')
+                  has_no3dep = .true.
+                  nullify(cgrid%metinput(ipy)%no3dep)
+                  allocate(cgrid%metinput(ipy)%no3dep(mem_size))
+                  cgrid%metinput(ipy)%no3dep = huge(1.)
                case default
                   call fatal_error('Invalid met variable'//trim(met_vars(iformat,iv))//'!' &
                                   ,'init_met_drivers','ed_met_driver.f90')
@@ -453,7 +465,13 @@ subroutine read_met_drivers_init
             else
                year_use = year_use + 1
             end if
-            metyears(iyear) = year_use
+
+            if(iyeara+iyear-1 <= 1901)then
+               metyears(iyear) = 1901
+            else
+               metyears(iyear) = year_use
+            endif
+
             if (mynum == 1) then
                write (unit=*,fmt='(2(1x,i12))') iyear,metyears(iyear)
             end if
@@ -1676,6 +1694,14 @@ subroutine update_met_drivers(cgrid)
                do ipy = 1,cgrid%npolygons
                   cgrid%met(ipy)%atm_co2 = cgrid%metinput(ipy)%co2(mprev)
                end do
+            case('nh4dep')   ! NH4 deposition mgN/m2/day
+               do ipy = 1,cgrid%npolygons
+                  cgrid%met(ipy)%nh4dep = cgrid%metinput(ipy)%nh4dep(mprev)
+               end do
+            case('no3dep')   ! NO3 deposition mgN/m2/day
+               do ipy = 1,cgrid%npolygons
+                  cgrid%met(ipy)%no3dep = cgrid%metinput(ipy)%no3dep(mprev)
+               end do
             end select
             
          !----- In this case, we need to interpolate. -------------------------------------!
@@ -2384,6 +2410,17 @@ subroutine update_met_drivers(cgrid)
                                          + cgrid%metinput(ipy)%co2(mprev) * wprev
                end do
 
+            case('nh4dep')     ! mgN/m2/day
+               do ipy = 1,cgrid%npolygons
+                  cgrid%met(ipy)%nh4dep = cgrid%metinput(ipy)%nh4dep(mnext) * wnext          &
+                                         + cgrid%metinput(ipy)%nh4dep(mprev) * wprev
+               end do
+            case('no3dep')     ! mgN/m2/day
+               do ipy = 1,cgrid%npolygons
+                  cgrid%met(ipy)%no3dep = cgrid%metinput(ipy)%no3dep(mnext) * wnext          &
+                                         + cgrid%metinput(ipy)%no3dep(mprev) * wprev
+               end do
+
             end select
          end select
       end do varloop
@@ -3015,6 +3052,10 @@ subroutine read_ol_file(infile,iformat, iv, mname, year, offset, cgrid)
          cgrid%metinput(ipy)%tmp(ioa:ioz)       = metvar(1:np,ilon,ilat)
       case('co2')
          cgrid%metinput(ipy)%co2(ioa:ioz)       = metvar(1:np,ilon,ilat)
+      case('nh4dep')
+         cgrid%metinput(ipy)%nh4dep(ioa:ioz)       = metvar(1:np,ilon,ilat)
+      case('no3dep')
+         cgrid%metinput(ipy)%no3dep(ioa:ioz)       = metvar(1:np,ilon,ilat)
       end select
       
    end do
@@ -3142,6 +3183,16 @@ subroutine transfer_ol_month(vname, frq, cgrid)
    case ('co2')
       do ipy=1,cgrid%npolygons
          cgrid%metinput(ipy)%co2(ica:icz)        = cgrid%metinput(ipy)%co2(ifa:ifz)
+      end do
+
+   case ('nh4dep')
+      do ipy=1,cgrid%npolygons
+         cgrid%metinput(ipy)%nh4dep(ica:icz)        = cgrid%metinput(ipy)%nh4dep(ifa:ifz)
+      end do
+
+   case ('no3dep')
+      do ipy=1,cgrid%npolygons
+         cgrid%metinput(ipy)%no3dep(ica:icz)        = cgrid%metinput(ipy)%no3dep(ifa:ifz)
       end do
 
    end select

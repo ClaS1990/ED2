@@ -568,7 +568,7 @@ Contains
     d_psol = d_psol + decomp_dom_p
     d_dom_p = d_dom_p - decomp_dom_p
 
-    bnf_rate = 5.e-11 ! mgN/gSOIL/s
+    bnf_rate = 1.2e-10 ! 5.e-11 ! mgN/gSOIL/s
     d_nh4_bnf = d_nh4_bnf + bnf_rate
     d_nh4 = d_nh4 + bnf_rate
 

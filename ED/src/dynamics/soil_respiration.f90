@@ -18,6 +18,7 @@ subroutine soil_respiration(csite,ipa,mzg,ntext_soil)
    use therm_lib    , only : uextcm2tl                ! ! function
    use ed_misc_coms , only : dtlsm                    & ! intent(in)
                            , frqsum                   ! ! intent(in)
+   use pft_coms, only: root_respiration_factor
    implicit none
    !----- Arguments. ----------------------------------------------------------------------!
    type(sitetype)                , target     :: csite
@@ -47,7 +48,6 @@ subroutine soil_respiration(csite,ipa,mzg,ntext_soil)
    real                          , save       :: dtlsm_o_frqsum
    logical                       , save       :: first_time = .true.
    !---------------------------------------------------------------------------------------!
-
 
    !----- Assign the constant scaling factor. ---------------------------------------------!
    if (first_time) then
@@ -79,7 +79,6 @@ subroutine soil_respiration(csite,ipa,mzg,ntext_soil)
                                       * dslz(k)
       end do
       !------------------------------------------------------------------------------------!
-
 
       !------------------------------------------------------------------------------------!
       !      Now we make the value in umol/m2/s, by dividing by the total depth and        !
@@ -477,8 +476,6 @@ real function root_resp_norm(ipft,soil_temp)
    rrf_high_temp8  = dble(rrf_high_temp          (ipft)) + t008
    rrf_decay_e8    = dble(rrf_decay_e            (ipft))
    !---------------------------------------------------------------------------------------!
-
-
 
    !---------------------------------------------------------------------------------------!
    !    Compute the functions that will control the Rrf function for low and high temper-  !

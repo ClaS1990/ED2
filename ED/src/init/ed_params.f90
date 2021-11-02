@@ -1544,7 +1544,7 @@ subroutine init_pft_photo_params()
    Vm0(2)                    = 18.750000 * ssfact * vmfact_c3
    Vm0(3)                    = 12.500000 * ssfact * vmfact_c3
    Vm0(4)                    =  6.250000 * ssfact * vmfact_c3
-   Vm0(5)                    = 18.300000 * ssfact * vmfact_c3
+   Vm0(5)                    = 18.300000 * ssfact * vmfact_c3*1.41
    Vm0(6)                    = 11.350000 * ssfact * vmfact_c3
    Vm0(7)                    = 11.350000 * ssfact * vmfact_c3
    Vm0(8)                    =  4.540000 * ssfact * vmfact_c3
@@ -1916,7 +1916,7 @@ subroutine init_pft_resp_params()
    leaf_turnover_rate(2)          = 1.0
    leaf_turnover_rate(3)          = 0.5
    leaf_turnover_rate(4)          = onethird
-   leaf_turnover_rate(5)          = 2.0
+   leaf_turnover_rate(5)          = 2.0*0.5
    leaf_turnover_rate(6)          = onethird
    leaf_turnover_rate(7)          = onethird
    leaf_turnover_rate(8)          = onethird
@@ -1935,7 +1935,7 @@ subroutine init_pft_resp_params()
    root_turnover_rate(2)          = leaf_turnover_rate(2)
    root_turnover_rate(3)          = leaf_turnover_rate(3)
    root_turnover_rate(4)          = leaf_turnover_rate(4)
-   root_turnover_rate(5)          = 2.0
+   root_turnover_rate(5)          = 2.0*0.5
    root_turnover_rate(6)          = 3.927218 ! 0.333
    root_turnover_rate(7)          = 4.117847 ! 0.333
    root_turnover_rate(8)          = 3.800132 ! 0.333
@@ -1978,7 +1978,7 @@ subroutine init_pft_resp_params()
    ! temperature of 15C.  Its units is �mol_CO2/kg_fine_roots/s.                           !
    !---------------------------------------------------------------------------------------!
    select case (iphysiol)
-      case (0,1)
+      case (0,1,4)
          !----- Arrhenius function. ----------------------------------------------------------!
          root_respiration_factor(1:17)   = 0.528 * rrffact
       case (2,3)
@@ -2155,7 +2155,7 @@ subroutine init_pft_mort_params()
    mort3(2)  = 0.07235222
    mort3(3)  = 0.04156404
    mort3(4)  = 0.0!check
-   mort3(5)  = 0.066
+   mort3(5)  = 0.066 * 0.5
    mort3(6)  = 0.0033928
    mort3(7)  = 0.0043
    mort3(8)  = 0.0023568

@@ -1820,6 +1820,7 @@ module ed_state_vars
 
       type(mend_model) :: mend
       type(mend_model) :: mend_mm
+      type(mend_model) :: mend_dm
 
    end type sitetype
    !=======================================================================================!
@@ -4248,6 +4249,7 @@ module ed_state_vars
 
       call mend_allocate(csite%mend, npatches)
       call mend_allocate(csite%mend_mm, npatches)
+      call mend_allocate(csite%mend_dm, npatches)
 
       allocate(csite%plant_input_C(nlitter+1,npatches))
       allocate(csite%plant_input_N(nlitter+1,npatches))
@@ -7152,6 +7154,7 @@ module ed_state_vars
       if(allocated(csite%mend%som%cvars%mom))then
          call mend_deallocate(csite%mend)
          call mend_deallocate(csite%mend_mm)
+         call mend_deallocate(csite%mend_dm)
       endif
 
       if(associated(csite%plant_input_C))deallocate(csite%plant_input_C)
@@ -8220,6 +8223,7 @@ module ed_state_vars
 
          call copy_mendtype(isite%mend, osite%mend, ipa, ipa)
          call copy_mendtype(isite%mend_mm, osite%mend_mm, ipa, ipa)
+         call copy_mendtype(isite%mend_dm, osite%mend_dm, ipa, ipa)
          do ilitter = 1, nlitter+1
             osite%plant_input_C(ilitter,ipa) = isite%plant_input_C(ilitter,ipa)
             osite%plant_input_N(ilitter,ipa) = isite%plant_input_N(ilitter,ipa)
@@ -8823,6 +8827,7 @@ module ed_state_vars
 
       call copy_mendtype_mask(isite%mend,z,lmask,osite%mend,isize)
       call copy_mendtype_mask(isite%mend_mm,z,lmask,osite%mend_mm,isize)
+      call copy_mendtype_mask(isite%mend_dm,z,lmask,osite%mend_dm,isize)
 
       !------------------------------------------------------------------------------------!
       !      We break the subroutines into smaller pieces so Fortran doesn't complain...   !
@@ -17667,7 +17672,7 @@ module ed_state_vars
          nvar = nvar+1
          call vtable_edio_r(npts,cgrid%dmean_soil_water                                    &
                            ,nvar,igr,init,cgrid%pyglob_id,var_len,var_len_global,max_ptrs  &
-                           ,'DMEAN_SOIL_WATER_PY        :12:'//trim(eorq_keys)     )
+                           ,'DMEAN_SOIL_WATER_PY        :12:dail:'//trim(eorq_keys)     )
          call metadata_edio(nvar,igr                                                       &
                            ,'Daily mean - Soil water content'                              &
                            ,'[      m3/m3]','(nzg,ipoly)'        )
@@ -17676,7 +17681,7 @@ module ed_state_vars
          nvar = nvar+1
          call vtable_edio_r(npts,cgrid%dmean_soil_temp                                     &
                            ,nvar,igr,init,cgrid%pyglob_id,var_len,var_len_global,max_ptrs  &
-                           ,'DMEAN_SOIL_TEMP_PY         :12:'//trim(eorq_keys)     )
+                           ,'DMEAN_SOIL_TEMP_PY         :12:dail:'//trim(eorq_keys)     )
          call metadata_edio(nvar,igr                                                       &
                            ,'Daily mean - Soil temperature'                                &
                            ,'[          K]','(nzg,ipoly)'        )
@@ -20090,7 +20095,9 @@ module ed_state_vars
 
       if(allocated(csite%mend%som%cvars%dom))then
          call filltab_mendtype(nvar,csite%npatches,csite%mend_mm,igr,init,csite%paglob_id, &
-              var_len, var_len_global, max_ptrs)
+              var_len, var_len_global, max_ptrs, 'mont')
+         call filltab_mendtype(nvar,csite%npatches,csite%mend_dm,igr,init,csite%paglob_id, &
+              var_len, var_len_global, max_ptrs, 'dail')
       endif
 
 

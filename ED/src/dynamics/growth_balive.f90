@@ -52,7 +52,7 @@ module growth_balive
       use fuse_fiss_utils , only : sort_cohorts           ! ! subroutine
       use ed_misc_coms    , only : igrass                 & ! intent(in)
                                  , growth_resp_scheme     & ! intent(in)
-                                 , storage_resp_scheme    ! ! intent(in)
+                                 , storage_resp_scheme, current_time    ! ! intent(in)
       use budget_utils    , only : update_budget          ! ! sub-routine
       use consts_coms   , only : tiny_num     ! ! intent(in)
       use plant_hydro,     only : rwc2tw                   ! ! sub-routine
@@ -99,6 +99,7 @@ module growth_balive
       real                          :: balive_aim
       logical                       :: flushing
       logical                       :: on_allometry
+      real :: cut_loss
       !------------------------------------------------------------------------------------!
 
 
@@ -132,7 +133,6 @@ module growth_balive
                   call get_maintenance(cpatch,ico,tfact,csite%avg_daily_temp(ipa))
                   call get_daily_C_gain(cpatch,ico,daily_C_gain)
                   call apply_maintenance(cpatch,ico,cb_decrement)
-
                   call update_cb(cpatch,ico,cb_decrement)
 
                   !------------------------------------------------------------------------!
@@ -216,7 +216,6 @@ module growth_balive
                      cpatch%sapb_growth_resp(ico) = growth_resp_int * cpatch%bsapwoodb(ico)
                   end select
                   !------------------------------------------------------------------------!
-
 
 
                   !------------------------------------------------------------------------!
@@ -313,6 +312,15 @@ module growth_balive
                   cpatch%monthly_dndt  (ico) = cpatch%monthly_dndt  (ico) + dndt   * tfact
                   cpatch%monthly_dlnndt(ico) = cpatch%monthly_dlnndt(ico) + dlnndt * tfact
                   !------------------------------------------------------------------------!
+
+
+                  if(current_time%year >= 2007 .and. current_time%date == 1)then
+                     if(current_time%month == 6 .or. current_time%month == 8 .or. current_time%month == 10)then
+                        cut_loss = 0.8 * cpatch%bleaf(ico)
+                        cpatch%bleaf(ico) = cpatch%bleaf(ico) - cut_loss
+                        cpatch%balive(ico) = cpatch%balive(ico) - cut_loss
+                     endif
+                  endif
 
 
                   !----- Updating LAI, WAI, and CAI. --------------------------------------!
@@ -1324,12 +1332,12 @@ module growth_balive
       cpatch%nstorage(ico) = cpatch%nstorage(ico) + tr_nstorage
       extra_storage = max(0., cpatch%nstorage(ico) - cpatch%nstorage_max(ico))
       cpatch%nstorage(ico) = cpatch%nstorage(ico) - extra_storage
-      csite%plant_input_N(3,ipa) = csite%plant_input_N(3,ipa) + extra_storage
+      csite%plant_input_N(3,ipa) = csite%plant_input_N(3,ipa) + extra_storage*cpatch%nplant(ico)
 
       cpatch%pstorage(ico) = cpatch%pstorage(ico) + tr_pstorage
       extra_storage = max(0., cpatch%pstorage(ico) - cpatch%pstorage_max(ico))
       cpatch%pstorage(ico) = cpatch%pstorage(ico) - extra_storage
-      csite%plant_input_P(3,ipa) = csite%plant_input_P(3,ipa) + extra_storage         
+      csite%plant_input_P(3,ipa) = csite%plant_input_P(3,ipa) + extra_storage*cpatch%nplant(ico)
 
       return
    end subroutine apply_c_xfers
@@ -2368,22 +2376,22 @@ module growth_balive
                 ipft,cpatch%leaf_water_int(ico),cpatch%wood_water_int(ico))
         endif
 !endif
-        if(limitation_flag == 2 .and. ipft > 4)then
-           c_cost = cost_bnf
-           cpatch%n_fixation(ico) = (cpatch%bdead(ico)+cpatch%balive(ico)) * 2. * &
-                bnf_rate * cpatch%pstorage(ico) / cpatch%pstorage_max(ico)
-           if(cpatch%bstorage(ico) <= 0.)then
-              cpatch%n_fixation(ico) = 0.
-           elseif(cpatch%bstorage(ico) < c_cost * cpatch%n_fixation(ico))then
-              cpatch%n_fixation(ico) = cpatch%bstorage(ico) / c_cost
-           endif
-           cpatch%nstorage(ico) = cpatch%nstorage(ico) + cpatch%n_fixation(ico)
-           cpatch%bstorage(ico) = cpatch%bstorage(ico) - cpatch%n_fixation(ico) * c_cost
-           csite%rh(ipa) = csite%rh(ipa) + cpatch%n_fixation(ico) * c_cost * &
-                cpatch%nplant(ico) * kgCday_2_umols
-        else
+!        if(limitation_flag == 2 .and. ipft > 4)then
+!           c_cost = cost_bnf
+!           cpatch%n_fixation(ico) = (cpatch%bdead(ico)+cpatch%balive(ico)) * 2. * &
+!                bnf_rate * cpatch%pstorage(ico) / cpatch%pstorage_max(ico)
+!           if(cpatch%bstorage(ico) <= 0.)then
+!              cpatch%n_fixation(ico) = 0.
+!           elseif(cpatch%bstorage(ico) < c_cost * cpatch%n_fixation(ico))then
+!              cpatch%n_fixation(ico) = cpatch%bstorage(ico) / c_cost
+!           endif
+!           cpatch%nstorage(ico) = cpatch%nstorage(ico) + cpatch%n_fixation(ico)
+!           cpatch%bstorage(ico) = cpatch%bstorage(ico) - cpatch%n_fixation(ico) * c_cost
+!           csite%rh(ipa) = csite%rh(ipa) + cpatch%n_fixation(ico) * c_cost * &
+!                cpatch%nplant(ico) * kgCday_2_umols
+!        else
            cpatch%n_fixation(ico) = 0.
-        endif
+!        endif
 
 !        if(limitation_flag == 3)then
 !           cpatch%enz_alloc_frac_p(ico) = cpatch%enz_alloc_frac_p(ico) + 0.05

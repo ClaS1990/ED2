@@ -468,7 +468,6 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,ntext_soil                  
                 vm0_ico = cpatch%vm_bar(ico)
             end if
 
-            
             !------------------------------------------------------------------------------!
             !    Call the photosynthesis for actual photosynthetic rates.  The units       !
             ! of the input and output are the standard in most of ED modules, but many of  !
@@ -545,6 +544,7 @@ subroutine canopy_photosynthesis(csite,cmet,mzg,ipa,ntext_soil                  
              , compp                       & ! Gross photo. compensation point  [ �mol/mol]
              , limit_flag                  & ! Photosynthesis limitation flag   [      ---]
              )
+
              end select
 
             !----- Convert leaf respiration to [�mol/m�ground/s] --------------------------!

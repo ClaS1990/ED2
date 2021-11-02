@@ -231,11 +231,12 @@ Contains
   end subroutine mend_som_init
 
   subroutine mend_som_extern_forcing(ndep_rate, consts, slden, input_nh4, &
-       input_no3, pdep_rate, input_ppar, year, ndep_appl, pdep_appl, ndep_met, pdep_met)
+       input_no3, pdep_rate, input_ppar, year, ndep_appl, pdep_appl, ndep_met, pdep_met, &
+       nh4dep_met, no3dep_met)
 
     use mend_consts_coms, only: decomp_consts
     use soil_coms, only: isoilflg
-    use met_driver_coms, only: dep_scheme
+    use met_driver_coms, only: dep_scheme, has_nh4dep, has_no3dep
 
     implicit none
 
@@ -249,13 +250,21 @@ Contains
     real, intent(in) :: ndep_appl
     real, intent(in) :: pdep_appl
     integer, intent(in) :: year
-    real, intent(in) :: ndep_met, pdep_met
+    real, intent(in) :: ndep_met, pdep_met, no3dep_met, nh4dep_met
 
     if(dep_scheme == 0)then
-       input_nh4 = ndep_rate / (consts%eff_soil_depth * slden * 1000.)
-       input_no3 = 0.
+       if(has_nh4dep)then
+          input_nh4 = nh4dep_met / (consts%eff_soil_depth * slden * 1000.)!*1e10
+       else
+          input_nh4 = ndep_rate / (consts%eff_soil_depth * slden * 1000.)
+       endif
+       if(has_no3dep)then
+          input_no3 = no3dep_met / (consts%eff_soil_depth * slden * 1000.)
+       else
+          input_no3 = ndep_rate / (consts%eff_soil_depth * slden * 1000.)
+       endif
        input_ppar = pdep_rate / (consts%eff_soil_depth * slden * 1000.)
-   elseif(dep_scheme == 1)then
+    elseif(dep_scheme == 1)then
        input_nh4 = ndep_met  / (consts%eff_soil_depth * slden * 1000.)
        input_ppar = pdep_met  / (consts%eff_soil_depth * slden * 1000.)
        input_no3 = 0.

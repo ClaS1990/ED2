@@ -38,7 +38,7 @@ Contains
     use nutrient_constants, only: soil_bulk_den, soil_ph
     use mend_consts_coms, only: mend_init_consts, som_consts
     use mend_som, only: mend_som_init
-    use mend_state_vars, only: npom, nwood, mend_zero_vars, mend_mm_time
+    use mend_state_vars, only: npom, nwood, mend_zero_vars, mend_mm_time, mend_dm_time
     use nutrient_constants, only: soil_cpct, soil_som_c2n, soil_totp,   &
          soil_extrp
     use soil_coms, only: soil, isoilflg
@@ -57,6 +57,7 @@ Contains
     call mend_init_consts(sens_params)
 
     mend_mm_time = 0.
+    mend_dm_time = 0.
 
     cgrid => edgrid_g(1)
     do ipy = 1, cgrid%npolygons
@@ -66,6 +67,7 @@ Contains
           do ipa = 1, csite%npatches
 
              call mend_zero_vars(csite%mend_mm, ipa, ipa)
+             call mend_zero_vars(csite%mend_dm, ipa, ipa)
 
              if(isoilflg(1) == 3)then
                 csite%mend%bulk_den(ipa) = soil(cpoly%ntext_soil(1,isi))%slden
@@ -74,8 +76,10 @@ Contains
              endif
 
              csite%mend_mm%bulk_den(ipa) = csite%mend%bulk_den(ipa)
+             csite%mend_dm%bulk_den(ipa) = csite%mend%bulk_den(ipa)
              csite%mend%pH(ipa) = soil_ph
              csite%mend_mm%pH(ipa) = csite%mend%pH(ipa)
+             csite%mend_dm%pH(ipa) = csite%mend%pH(ipa)
 
              call mend_som_init(npom,  &
                   csite%mend%som%cvars%pom(:,ipa), csite%mend%som%cvars%dom(ipa), &
@@ -124,7 +128,7 @@ Contains
     return
   end subroutine mend_init
 
-  subroutine mend_extern_forcing(mend, ipa, cpatch, slden, ndep_met, pdep_met)
+  subroutine mend_extern_forcing(mend, ipa, cpatch, slden, ndep_met, pdep_met, nh4dep_met, no3dep_met)
     use mend_state_vars, only: mend_model, nwood
     use ed_state_vars, only: patchtype
     use mend_som, only: mend_som_extern_forcing
@@ -139,11 +143,13 @@ Contains
     integer, intent(in) :: ipa
     real, intent(in) :: slden, ndep_met, pdep_met
     type(patchtype), target :: cpatch
+    real, intent(in) :: no3dep_met, nh4dep_met
+
 
     call mend_som_extern_forcing(ndep_rate, som_consts, slden, &
          mend%som%fluxes%nh4_dep(ipa), mend%som%fluxes%no3_dep(ipa), &
          pdep_rate, mend%som%fluxes%ppar_dep(ipa), current_time%year, &
-         ndep_appl, pdep_appl, ndep_met, pdep_met)
+         ndep_appl, pdep_appl, ndep_met, pdep_met, nh4dep_met, no3dep_met)
     
     mend%som%plvars%enz_plant_n(:,ipa) = 0.
     mend%som%plvars%enz_plant_p(:,ipa) = 0.

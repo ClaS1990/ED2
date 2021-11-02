@@ -328,30 +328,30 @@ subroutine structural_growth(cgrid, month)
                       csite%total_plant_nitrogen_uptake(ipa) + net_seed_N_uptake           &
                     + net_stem_N_uptake
 
-               csite%plant_input_C(1,ipa) = csite%plant_input_C(1,ipa) +  &
-                    bstorage_mort_litter
+!               csite%plant_input_C(1,ipa) = csite%plant_input_C(1,ipa) +  &
+!                    bstorage_mort_litter
                csite%plant_input_C(2,ipa) = csite%plant_input_C(2,ipa) +  &
                     bleaf_mort_litter
                csite%plant_input_C(3,ipa) = csite%plant_input_C(3,ipa) +  &
-                    broot_mort_litter
+                    broot_mort_litter + bstorage_mort_litter
                csite%plant_input_C(4,ipa) = csite%plant_input_C(4,ipa) +   &
                     seed_litter + struct_litter
 
-               csite%plant_input_N(1,ipa) = csite%plant_input_N(1,ipa) +  &
-                    nstorage_mort_litter
+!               csite%plant_input_N(1,ipa) = csite%plant_input_N(1,ipa) +  &
+!                    nstorage_mort_litter
                csite%plant_input_N(2,ipa) = csite%plant_input_N(2,ipa) +  &
                     bleaf_mort_litter / c2n_leaf(ipft)
                csite%plant_input_N(3,ipa) = csite%plant_input_N(3,ipa) +  &
-                    broot_mort_litter / c2n_leaf(ipft)
+                    broot_mort_litter / c2n_leaf(ipft) + nstorage_mort_litter
                csite%plant_input_N(4,ipa) = csite%plant_input_N(4,ipa) +   &
                     seed_litter / c2n_recruit(ipft) + struct_litter / c2n_stem(ipft)
 
-               csite%plant_input_P(1,ipa) = csite%plant_input_P(1,ipa) +  &
-                    pstorage_mort_litter
+!               csite%plant_input_P(1,ipa) = csite%plant_input_P(1,ipa) +  &
+!                    pstorage_mort_litter
                csite%plant_input_P(2,ipa) = csite%plant_input_P(2,ipa) +  &
                     bleaf_mort_litter / c2p_leaf(ipft)
                csite%plant_input_P(3,ipa) = csite%plant_input_P(3,ipa) +  &
-                    broot_mort_litter / c2p_leaf(ipft)
+                    broot_mort_litter / c2p_leaf(ipft) + pstorage_mort_litter
                csite%plant_input_P(4,ipa) = csite%plant_input_P(4,ipa) +   &
                     seed_litter / c2p_recruit(ipft) + struct_litter / c2p_wood(ipft)
 

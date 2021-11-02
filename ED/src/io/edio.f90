@@ -31,7 +31,6 @@ subroutine ed_output(observation_time,analysis_time,new_day         &
                            , zero_ed_qmean_vars      & ! sub-routine
                            , zero_ed_qmean_vars      & ! sub-routine
                            , zero_ed_yearly_vars     ! ! sub-routine
-   use mend_state_vars, only: mend_mm_time
    implicit none
    !----- Arguments. ----------------------------------------------------------------------!
    logical, intent(in)  :: observation_time

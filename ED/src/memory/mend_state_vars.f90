@@ -3,7 +3,7 @@ Module mend_state_vars
 
   integer, parameter :: npom=2
   integer, parameter :: nwood=0
-  real :: mend_mm_time
+  real :: mend_mm_time, mend_dm_time
 
   ! Can be used for SOM or litter
   type org_vars
@@ -42,6 +42,9 @@ Module mend_state_vars
      real, allocatable, dimension(:,:) :: nh4_plant
      real, allocatable, dimension(:,:) :: no3_plant
      real, allocatable, dimension(:,:) :: p_plant
+     real, allocatable, dimension(:) :: nh4_plant_sum
+     real, allocatable, dimension(:) :: no3_plant_sum
+     real, allocatable, dimension(:) :: p_plant_sum
      real, allocatable, dimension(:) :: nmin
      real, allocatable, dimension(:) :: nitr
   end type ext_fluxes
@@ -142,6 +145,9 @@ Contains
     allocate(mvars%fluxes%nh4_plant(n_pft,npatches))
     allocate(mvars%fluxes%no3_plant(n_pft,npatches))
     allocate(mvars%fluxes%p_plant(n_pft,npatches))
+    allocate(mvars%fluxes%nh4_plant_sum(npatches))
+    allocate(mvars%fluxes%no3_plant_sum(npatches))
+    allocate(mvars%fluxes%p_plant_sum(npatches))
     allocate(mvars%fluxes%nmin(npatches))
     allocate(mvars%fluxes%nitr(npatches))
 
@@ -240,6 +246,9 @@ Contains
     deallocate(mvars%fluxes%nh4_plant)
     deallocate(mvars%fluxes%no3_plant)
     deallocate(mvars%fluxes%p_plant)
+    deallocate(mvars%fluxes%nh4_plant_sum)
+    deallocate(mvars%fluxes%no3_plant_sum)
+    deallocate(mvars%fluxes%p_plant_sum)
     deallocate(mvars%fluxes%nmin)
     deallocate(mvars%fluxes%nitr)
 
@@ -361,6 +370,10 @@ Contains
        omvars%plvars%vno3up_plant(ipft,oipa) = imvars%plvars%vno3up_plant(ipft,iipa)
        omvars%plvars%vpup_plant(ipft,oipa) = imvars%plvars%vpup_plant(ipft,iipa)
     enddo
+
+    omvars%fluxes%nh4_plant_sum(oipa) = imvars%fluxes%nh4_plant_sum(iipa)
+    omvars%fluxes%no3_plant_sum(oipa) = imvars%fluxes%no3_plant_sum(iipa)
+    omvars%fluxes%p_plant_sum(oipa) = imvars%fluxes%p_plant_sum(iipa)
 
     do ipom = 1, npom
        omvars%plvars%plant_input_C_pom(ipom,oipa) =   &
@@ -497,6 +510,10 @@ Contains
        omvars%plvars%vpup_plant(ipft,1:masksz) = pack(imvars%plvars%vpup_plant(ipft,:),logmask)
     enddo
 
+    omvars%fluxes%nh4_plant_sum(1:masksz) = pack(imvars%fluxes%nh4_plant_sum,logmask)
+    omvars%fluxes%no3_plant_sum(1:masksz) = pack(imvars%fluxes%no3_plant_sum,logmask)
+    omvars%fluxes%p_plant_sum(1:masksz) = pack(imvars%fluxes%p_plant_sum,logmask)
+
     do ipom = 1, npom
        omvars%plvars%plant_input_C_pom(ipom,1:masksz) =   &
             pack(imvars%plvars%plant_input_C_pom(ipom,:),logmask)
@@ -567,7 +584,7 @@ Contains
 !  end subroutine copy_mendtype_mask_exchange
 
   subroutine filltab_mendtype(nvar, npts, mend, igr, init, paglob_id, var_len, &
-              var_len_global, max_ptrs)
+              var_len_global, max_ptrs, time_code)
     use ed_var_tables, only: vtable_edio_r, metadata_edio
     implicit none
     integer, intent(inout) :: nvar
@@ -582,22 +599,31 @@ Contains
     integer :: iwood
     integer :: npatches
     character(len=64) :: type_string
+    character(len=4) :: time_code
 
     npatches = npts
 
-    type_string = 'MEND_'
+    if(time_code == 'mont')then
+       type_string = 'MMEAN_MEND_'
+    else
+       type_string = 'MEND_'
+    endif
     nvar=nvar+1
     call vtable_edio_r(npatches,mend%bulk_den,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'BULK_DEN :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'BULK_DEN :31:hist:'//trim(time_code)) 
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
     nvar=nvar+1
     call vtable_edio_r(npatches,mend%pH,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'pH :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'pH :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
-    type_string = 'MEND_SOM_'
+    if(time_code == 'mont')then
+       type_string = 'MMEAN_MEND_SOM_'
+    else
+       type_string = 'MEND_SOM_'
+    endif
     call filltab_mendtype_type(nvar, npatches, mend%som, igr, init, paglob_id, var_len, &
-              var_len_global, max_ptrs, type_string)
+              var_len_global, max_ptrs, type_string, time_code)
 
 !    type_string = 'MEND_LITT_'
 !    call filltab_mendtype_type(nvar, npatches, mend%litt, igr, init, paglob_id, var_len, &
@@ -617,8 +643,9 @@ Contains
   end subroutine filltab_mendtype
   
   subroutine filltab_mendtype_type(nvar, npatches, mvars, igr, init, paglob_id, var_len, &
-              var_len_global, max_ptrs, type_string)
+              var_len_global, max_ptrs, type_string, time_code)
     use ed_var_tables, only: vtable_edio_r, metadata_edio
+    use ed_max_dims, only: n_pft
     implicit none
     integer, intent(inout) :: nvar
     integer, intent(in) :: npatches
@@ -630,119 +657,122 @@ Contains
     integer, intent(in) :: var_len_global
     integer, intent(in) :: max_ptrs
     character(len=*), intent(in) :: type_string
+    character(len=4) :: time_code
+    real, dimension(npatches) :: uptake_sum
+    integer :: ipa, ipft
 
     
     call filltab_mendtype_type_org(nvar, npatches, mvars%cvars, igr, init, paglob_id, var_len, &
-              var_len_global, max_ptrs, trim(type_string)//'C_')
+              var_len_global, max_ptrs, trim(type_string)//'C_', time_code)
     call filltab_mendtype_type_org(nvar, npatches, mvars%nvars, igr, init, paglob_id, var_len, &
-              var_len_global, max_ptrs, trim(type_string)//'N_')
+              var_len_global, max_ptrs, trim(type_string)//'N_', time_code)
     call filltab_mendtype_type_org(nvar, npatches, mvars%pvars, igr, init, paglob_id, var_len, &
-              var_len_global, max_ptrs, trim(type_string)//'P_')
+              var_len_global, max_ptrs, trim(type_string)//'P_', time_code)
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%invars%nh4,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_NH4 :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_NH4 :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%invars%no3,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_NO3 :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_NO3 :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%invars%plab,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_PLAB :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_PLAB :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%invars%psol,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_PSOL :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_PSOL :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%invars%pocc,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_POCC :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_POCC :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%invars%psec,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_PSEC :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_PSEC :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%invars%ppar,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_PPAR :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'IN_PPAR :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%co2_lost,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_CO2LOSS :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_CO2LOSS :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%ngas_lost,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NGASLOSS :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NGASLOSS :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%nh4_dep,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NH4DEP :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NH4DEP :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%no3_dep,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NO3DEP :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NO3DEP :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%ppar_dep,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_PPARDEP :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_PPARDEP :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%c_leach,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_CLEACH :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_CLEACH :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%n_leach,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NLEACH :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NLEACH :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%p_leach,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_PLEACH :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_PLEACH :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%nh4_bnf,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NH4BNF :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NH4BNF :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
-!    nvar=nvar+1
-!    call vtable_edio_r(npatches,mvars%fluxes%nh4_plant,nvar,igr,init,paglob_id, &
-!         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NH4PL :31:hist:mont:year') 
-!    call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
+    nvar=nvar+1
+    call vtable_edio_r(npatches,mvars%fluxes%nh4_plant_sum,nvar,igr,init,paglob_id, &
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NH4PL :31:hist:'//trim(time_code))
+    call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
-!    nvar=nvar+1
-!    call vtable_edio_r(npatches,mvars%fluxes%no3_plant,nvar,igr,init,paglob_id, &
-!         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NO3PL :31:hist:mont:year') 
-!    call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
+    nvar=nvar+1
+    call vtable_edio_r(npatches,mvars%fluxes%no3_plant_sum,nvar,igr,init,paglob_id, &
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NO3PL :31:hist:'//trim(time_code))
+    call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%nmin,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NMIN :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NMIN :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%fluxes%nitr,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NITR :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_NITR :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
-!    nvar=nvar+1
-!    call vtable_edio_r(npatches,mvars%fluxes%p_plant,nvar,igr,init,paglob_id, &
-!         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_PPL :31:hist:mont:year') 
-!    call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
+    nvar=nvar+1
+    call vtable_edio_r(npatches,mvars%fluxes%p_plant_sum,nvar,igr,init,paglob_id, &
+         var_len,var_len_global,max_ptrs,trim(type_string)//'FL_PPL :31:hist:'//trim(time_code))
+    call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
 !    nvar=nvar+1
 !    call vtable_edio_r(npatches,mvars%plvars%enz_plant_n,nvar,igr,init,paglob_id, &
@@ -771,39 +801,39 @@ Contains
 
     nvar=nvar+1
     call vtable_edio_r(npatches*npom,mvars%plvars%plant_input_C_pom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_POMINPC :311:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_POMINPC :311:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches*npom,mvars%plvars%plant_input_N_pom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_POMINPN :311:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_POMINPN :311:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches*npom,mvars%plvars%plant_input_P_pom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_POMINPP :311:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_POMINPP :311:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
     
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%plvars%plant_input_C_dom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_DOMINPC :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_DOMINPC :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%plvars%plant_input_N_dom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_DOMINPN :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_DOMINPN :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npatches,mvars%plvars%plant_input_P_dom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_DOMINPP :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'PL_DOMINPP :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     return
   end subroutine filltab_mendtype_type
 
   subroutine filltab_mendtype_type_org(nvar, npatches, ovars, igr, init, paglob_id, var_len, &
-              var_len_global, max_ptrs, type_string)
+              var_len_global, max_ptrs, type_string, time_code)
     use ed_var_tables, only: vtable_edio_r, metadata_edio
     implicit none
     integer, intent(inout) :: nvar
@@ -817,54 +847,55 @@ Contains
     integer, intent(in) :: max_ptrs
     character(len=*), intent(in) :: type_string
     integer :: npts
+    character(len=4) :: time_code
 
     npts = npatches * npom
 
     nvar=nvar+1
     call vtable_edio_r(npts,ovars%pom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'POM :311:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'POM :311:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
     
     nvar=nvar+1
     call vtable_edio_r(npts,ovars%enz_pom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'ENZPOM :311:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'ENZPOM :311:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     npts = npatches
 
     nvar=nvar+1
     call vtable_edio_r(npts,ovars%dom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'DOM :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'DOM :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npts,ovars%mom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'MOM :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'MOM :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npts,ovars%qom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'QOM :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'QOM :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npts,ovars%enz_mom,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'ENZMOM :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'ENZMOM :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npts,ovars%amb,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'AMB :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'AMB :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npts,ovars%dmb,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'DMB :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'DMB :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     nvar=nvar+1
     call vtable_edio_r(npts,ovars%enz_ptase,nvar,igr,init,paglob_id, &
-         var_len,var_len_global,max_ptrs,trim(type_string)//'ENZPTASE :31:hist:mont:year') 
+         var_len,var_len_global,max_ptrs,trim(type_string)//'ENZPTASE :31:hist:'//trim(time_code))
     call metadata_edio(nvar,igr,'No metadata available','[NA]','NA') 
 
     return

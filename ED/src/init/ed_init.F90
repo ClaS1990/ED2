@@ -149,12 +149,12 @@ subroutine set_site_defprops()
                !---------------------------------------------------------------------------!
                !     Use the soil type and populate the site-level soil texture.           !
                !---------------------------------------------------------------------------!
-!               do k=1,nzg
-!                  cpoly%ntext_soil(k,isi) = work_v(ifm)%ntext(itext,ipy)
-!               end do
-               cpoly%ntext_soil(1:4,isi) = 11
-               cpoly%ntext_soil(5:20,isi) = 6
-               cpoly%ntext_soil(21:25,isi) = 2
+               do k=1,nzg
+                  cpoly%ntext_soil(k,isi) = work_v(ifm)%ntext(itext,ipy)
+               end do
+!               cpoly%ntext_soil(1:4,isi) = 11
+!               cpoly%ntext_soil(5:20,isi) = 6
+!               cpoly%ntext_soil(21:25,isi) = 2
                !---------------------------------------------------------------------------!
 
 
@@ -274,12 +274,12 @@ subroutine soil_default_fill(cgrid,ifm,ipy)
       !------------------------------------------------------------------------------------!
       !     Use the commonest soil type and populate the site-level soil texture.          !
       !------------------------------------------------------------------------------------!
-!      do k=1,nzg
-!         cpoly%ntext_soil(k,isi) = work_v(ifm)%ntext(1,ipy)
-!      end do
-      cpoly%ntext_soil(1:4,isi) = 11
-      cpoly%ntext_soil(5:20,isi) = 6
-      cpoly%ntext_soil(21:25,isi) = 2
+      do k=1,nzg
+         cpoly%ntext_soil(k,isi) = work_v(ifm)%ntext(1,ipy)
+      end do
+!      cpoly%ntext_soil(1:4,isi) = 11
+!      cpoly%ntext_soil(5:20,isi) = 6
+!      cpoly%ntext_soil(21:25,isi) = 2
       !------------------------------------------------------------------------------------!
 
 

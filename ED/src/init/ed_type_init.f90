@@ -128,8 +128,9 @@ subroutine init_ed_cohort_vars(cpatch,ico, lsl)
    cpatch%turnover_amp    (ico) = 1.0
    !---------------------------------------------------------------------------------------!
 
+   cpatch%root2leaf(ico) = 0.5
    cpatch%bstorage_max(ico) = size2bl(cpatch%dbh(ico),cpatch%hite(ico),cpatch%pft(ico)) * &
-        (1. + cpatch%root2leaf(cpatch%pft(ico))) * nstorage_max_factor
+        (1. + cpatch%root2leaf(ico)) * nstorage_max_factor
    cpatch%nstorage_max(ico) = cpatch%bstorage_max(ico) / c2n_leaf(cpatch%pft(ico))
    cpatch%pstorage_max(ico) = cpatch%bstorage_max(ico) / c2p_leaf(cpatch%pft(ico))
 !   cpatch%nstorage(ico) = cpatch%nstorage_max(ico)

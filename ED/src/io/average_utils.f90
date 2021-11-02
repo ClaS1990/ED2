@@ -2666,6 +2666,8 @@ module average_utils
                                       , soil               ! ! intent(in)
       use consts_coms          , only : t00                & ! intent(in)
                                       , wdns               ! ! intent(in)
+      use mend_averages, only: mend_normalize
+      use mend_state_vars, only: mend_dm_time
       implicit none
       !----- Arguments. -------------------------------------------------------------------!
       type(edtype)                       , target     :: cgrid
@@ -2730,6 +2732,7 @@ module average_utils
             !------------------------------------------------------------------------------!
 
 
+            call mend_normalize(csite%mend_dm, mend_dm_time)
 
 
             !------------------------------------------------------------------------------!
@@ -2762,6 +2765,10 @@ module average_utils
             patchloop: do ipa=1,csite%npatches
                cpatch => csite%patch(ipa)
 
+
+               csite%mend_dm%som%fluxes%nh4_plant_sum(ipa) = sum(csite%mend_dm%som%fluxes%nh4_plant(:,ipa))
+               csite%mend_dm%som%fluxes%no3_plant_sum(ipa) = sum(csite%mend_dm%som%fluxes%no3_plant(:,ipa))
+               csite%mend_dm%som%fluxes%p_plant_sum(ipa) = sum(csite%mend_dm%som%fluxes%p_plant(:,ipa))
 
                !----- Site weight. --------------------------------------------------------!
                patch_wgt = csite%area(ipa) * site_area_i * site_wgt
@@ -3127,6 +3134,8 @@ module average_utils
       end do polyloop
       !------------------------------------------------------------------------------------!
 
+      mend_dm_time = 0.
+
       return
     end subroutine normalize_ed_dmean_vars
    !=======================================================================================!
@@ -3283,6 +3292,7 @@ module average_utils
                               , polygontype   & ! structure
                               , sitetype      & ! structure
                               , patchtype     ! ! structure
+      use mend_state_vars, only: mend_zero_vars
       implicit none
       !----- Arguments. -------------------------------------------------------------------!
       type(edtype)     , target  :: cgrid
@@ -3628,6 +3638,7 @@ module average_utils
                !---------------------------------------------------------------------------!
             end do patchloop
             !------------------------------------------------------------------------------!
+            call mend_zero_vars(csite%mend_dm,1,csite%npatches)
          end do siteloop
          !---------------------------------------------------------------------------------!
       end do polyloop
@@ -5055,6 +5066,10 @@ module average_utils
             patchloop: do ipa=1,csite%npatches
                cpatch => csite%patch(ipa)
 
+
+               csite%mend_mm%som%fluxes%nh4_plant_sum(ipa) = sum(csite%mend_mm%som%fluxes%nh4_plant(:,ipa))
+               csite%mend_mm%som%fluxes%no3_plant_sum(ipa) = sum(csite%mend_mm%som%fluxes%no3_plant(:,ipa))
+               csite%mend_mm%som%fluxes%p_plant_sum(ipa) = sum(csite%mend_mm%som%fluxes%p_plant(:,ipa))
 
                !----- Site weight. --------------------------------------------------------!
                patch_wgt = csite%area(ipa) * site_area_i * site_wgt
